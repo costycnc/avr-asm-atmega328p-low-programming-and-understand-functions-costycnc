@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Light up an Arduino LED in 30 seconds — costycnc.it/avr1</title>
+<meta name="description" content="A microcontroller is just a wardrobe with switches. Put 1 in the right compartment — the LED lights up. From the browser, no installation needed.">
+<meta name="keywords" content="arduino for beginners, program arduino without IDE, AVR assembly, ATmega328, LED arduino browser, costycnc avr1, home automation easy">
+<link rel="canonical" href="https://costycnc.it/avr1">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"LearningResource","name":"Program Arduino from the browser","description":"Learn to program ATmega328 microcontrollers without any installation, directly from the browser.","url":"https://costycnc.it/avr1","educationalLevel":"Beginner"}</script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#faf8f4; --border:#ddd0b8; --text:#1e1810; --muted:#907860;
+  --accent:#e85d04; --orange:#f48c06; --green:#16a34a;
+  --led-off:#3a1a1a; --led-on:#ff5020; --r:12px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;overflow-x:hidden}
+
+/* ── HERO ── */
+.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 16px 60px;text-align:center;background:radial-gradient(ellipse 90% 70% at 50% 40%,#fff3e8 0%,var(--bg) 100%)}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);margin-bottom:20px;opacity:0;animation:up .5s .1s ease both}
+.hero-h1{font-size:clamp(2.2rem,6vw,4rem);font-weight:900;line-height:1.07;letter-spacing:-1.5px;margin-bottom:16px;opacity:0;animation:up .5s .2s ease both}
+.hero-h1 em{font-style:normal;color:var(--accent)}
+.hero-sub{font-size:clamp(1rem,2.2vw,1.18rem);color:var(--muted);font-weight:700;max-width:460px;margin:0 auto 40px;opacity:0;animation:up .5s .3s ease both}
+
+/* ── WARDROBE OVERVIEW ── */
+.wardrobe-wrap{width:100%;max-width:680px;opacity:0;animation:up .7s .4s ease both}
+.wardrobe{
+  background:linear-gradient(180deg,#b8905a,#8a6030);
+  border-radius:14px;border:3px solid #6a4820;
+  padding:14px 12px 18px;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.15),inset 0 -4px 0 rgba(0,0,0,.3),0 20px 60px rgba(0,0,0,.22);
+}
+.wardrobe-top{background:#1e1810;border-radius:6px 6px 0 0;padding:7px 14px;margin:-14px -12px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #6a4820}
+.wardrobe-top span{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.35);letter-spacing:2px}
+.wardrobe-top code{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--orange);font-weight:700}
+.ov-rows{display:flex;flex-direction:column;gap:4px}
+
+.ov-row{background:linear-gradient(90deg,#f0e8d0,#e8d8b0);border-radius:5px;border:1.5px solid #c8a860;display:flex;align-items:center;gap:0;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 1px 3px rgba(0,0,0,.12);transition:all .15s}
+.ov-addr{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:rgba(255,255,255,.7);background:#1e1810;padding:0 6px;align-self:stretch;display:flex;align-items:center;min-width:32px;justify-content:center;flex-shrink:0}
+.ov-name{font-size:10px;font-weight:800;color:#906840;padding:0 7px;min-width:48px;flex-shrink:0}
+.ov-bits{display:flex;gap:2px;padding:4px 5px;flex:1}
+.ov-bit{flex:1;height:20px;border-radius:3px;background:linear-gradient(180deg,#faf4e8,#ede0c0);border:1px solid #d0b880;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;color:#c0a870}
+.ov-handle{width:20px;height:7px;background:linear-gradient(90deg,#888,#ccc 50%,#999);border-radius:4px;margin-right:7px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+
+.ov-row.star{background:linear-gradient(90deg,#fff8e0,#ffe898);border-color:var(--orange);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 0 0 2px rgba(244,140,6,.3),0 3px 12px rgba(244,140,6,.2);z-index:2;transform:scaleX(1.01)}
+.ov-row.star .ov-name{color:var(--accent);font-size:11px}
+.ov-row.star .ov-addr{background:var(--accent)}
+.ov-row.star .ov-bit{background:linear-gradient(180deg,#fff8e0,#ffe090);border-color:var(--orange)}
+.ov-bit.blink{animation:glowbit 1.6s ease infinite;border-color:var(--orange)!important;color:var(--accent)!important}
+@keyframes glowbit{0%,100%{box-shadow:0 0 3px rgba(244,140,6,.3)}50%{box-shadow:0 0 9px rgba(244,140,6,.75)}}
+
+.zoom-hint{opacity:0;animation:up .5s .85s ease both;margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:13px;font-weight:800;color:var(--accent)}
+.zoom-hint svg{animation:bounceD 1.3s ease infinite}
+@keyframes bounceD{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+
+/* ── BIG DRAWER ZOOM ── */
+.zoom-block{width:100%;max-width:580px;margin-top:28px;opacity:0;animation:up .6s .95s ease both}
+.zoom-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.zoom-tag span{background:var(--accent);color:#fff;padding:2px 8px;border-radius:4px;font-size:10px}
+.zoom-sub{font-size:.95rem;color:var(--muted);font-weight:700;margin-bottom:20px}
+
+.big-drawer{background:linear-gradient(160deg,#fffaf4,#ffefd8);border:2px solid var(--border);border-radius:16px;padding:20px 16px 18px;box-shadow:0 10px 48px rgba(0,0,0,.10),0 0 0 4px rgba(244,140,6,.12),inset 0 1px 0 rgba(255,255,255,.9)}
+.drawer-lbl{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:5px}
+.drawer-lbl code{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;background:#1e1810;color:var(--orange);padding:2px 8px;border-radius:5px}
+
+.slots{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.slot{border-radius:9px;border:2px solid var(--border);background:linear-gradient(180deg,#faf4e8,#f0e8d0);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:6px 2px 7px;cursor:pointer;user-select:none;transition:all .18s;box-shadow:0 2px 4px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.75);aspect-ratio:.62}
+.slot:hover{border-color:var(--orange);transform:translateY(-4px);box-shadow:0 8px 20px rgba(232,93,4,.18)}
+.slot-num{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:#b09878}
+.slot-val{font-family:'JetBrains Mono',monospace;font-size:21px;font-weight:900;color:#c8b090;transition:all .2s;line-height:1}
+.slot-name{font-size:7px;font-weight:800;color:#c0a880;text-align:center;line-height:1.3;min-height:14px;white-space:pre-line}
+.slot.on{background:linear-gradient(180deg,#fff3e0,#ffe090);border-color:var(--accent);box-shadow:0 4px 20px rgba(232,93,4,.25),inset 0 1px 0 rgba(255,255,255,.9)}
+.slot.on .slot-val{color:var(--accent)}.slot.on .slot-num{color:var(--accent)}
+.slot.star-slot{border-color:var(--orange);background:linear-gradient(180deg,#fffde0,#fff0a0);animation:breathe 2.2s ease infinite}
+.slot.star-slot .slot-num,.slot.star-slot .slot-name{color:var(--orange)}
+@keyframes breathe{0%,100%{box-shadow:0 2px 10px rgba(244,140,6,.35),inset 0 1px 0 rgba(255,255,255,.7)}50%{box-shadow:0 6px 24px rgba(244,140,6,.6),inset 0 1px 0 rgba(255,255,255,.9)}}
+.slot.star-slot.on{animation:none}
+
+/* ── LED ── */
+.led-row{display:flex;align-items:center;gap:18px;margin-top:16px;padding:14px 16px;background:#fff;border-radius:12px;border:2px solid var(--border)}
+.led-bulb{width:50px;height:50px;border-radius:50%;flex-shrink:0;background:var(--led-off);border:4px solid #2a1010;box-shadow:0 3px 10px rgba(0,0,0,.3);transition:all .4s;position:relative}
+.led-bulb::after{content:'';position:absolute;top:8px;left:12px;width:10px;height:8px;border-radius:50%;background:rgba(255,255,255,.08);transition:all .4s}
+.led-bulb.on{background:var(--led-on);border-color:#cc3000;box-shadow:0 0 0 8px rgba(255,80,32,.12),0 0 32px 10px rgba(255,80,32,.4)}
+.led-bulb.on::after{background:rgba(255,255,255,.35)}
+.led-text strong{display:block;font-size:16px;font-weight:900}
+.led-text span{font-size:12px;color:var(--muted);font-weight:700}
+.led-status{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;transition:color .3s}
+.led-status.ok{color:var(--green);font-weight:700}
+
+.scroll-cue{margin-top:32px;font-size:13px;color:var(--muted);font-weight:700;opacity:0;animation:up .5s 1.2s ease both;display:flex;flex-direction:column;align-items:center;gap:5px}
+.scroll-cue svg{animation:bounceD 1.4s ease infinite}
+
+/* ── SECTIONS ── */
+section{padding:72px 20px;max-width:860px;margin:0 auto}
+.label{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;display:block}
+h2{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:900;letter-spacing:-.5px;line-height:1.12;margin-bottom:14px}
+.lead{font-size:1.05rem;color:var(--muted);font-weight:700;max-width:560px;margin-bottom:40px}
+
+/* code block */
+.code-block{background:#1e1810;border-radius:14px;overflow:hidden;margin-bottom:32px;box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.code-top{background:#161210;padding:11px 18px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.dot{width:11px;height:11px;border-radius:50%}
+.code-file{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.3);margin-left:8px}
+.code-body{padding:22px;font-family:'JetBrains Mono',monospace;font-size:15px;line-height:2.4}
+.cl{display:flex;gap:16px;align-items:baseline}
+.ln{color:#4a5568;font-size:12px;min-width:18px}
+.kw{color:#79c0ff}.nh{color:var(--orange);font-weight:700}.cm{color:#4a6070;font-size:13px}
+
+/* compare */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:40px}
+@media(max-width:560px){.compare{grid-template-columns:1fr}}
+.ccard{background:#fff;border:2px solid var(--border);border-radius:var(--r);padding:22px}
+.ccard.good{border-color:#16a34a;background:linear-gradient(160deg,#f0fdf4,#dcfce7)}
+.ccard.bad{border-color:#fca5a5;background:linear-gradient(160deg,#fff5f5,#fee2e2)}
+.ctag{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:5px;display:inline-block;margin-bottom:12px}
+.ccard.good .ctag{background:#16a34a;color:#fff}.ccard.bad .ctag{background:#dc2626;color:#fff}
+.ccard h3{font-size:1rem;font-weight:900;margin-bottom:10px}
+.clist{list-style:none;display:flex;flex-direction:column;gap:6px}
+.clist li{font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:flex-start;gap:7px}
+.ccard.good .clist li::before{content:'✓';color:#16a34a;font-weight:900;flex-shrink:0}
+.ccard.bad .clist li::before{content:'✗';color:#dc2626;font-weight:900;flex-shrink:0}
+
+/* why grid */
+.why-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:40px}
+.wcard{background:#fff;border:1.5px solid var(--border);border-radius:var(--r);padding:20px;transition:all .2s}
+.wcard:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.08);border-color:var(--orange)}
+.wcard .icon{font-size:28px;margin-bottom:10px}
+.wcard h3{font-size:14px;font-weight:900;margin-bottom:5px}
+.wcard p{font-size:13px;color:var(--muted);font-weight:600}
+
+/* steps */
+.steps{display:flex;flex-direction:column;gap:0;position:relative;margin-bottom:40px}
+.steps::before{content:'';position:absolute;left:24px;top:36px;bottom:36px;width:2px;background:var(--border)}
+.step{display:flex;gap:18px;align-items:flex-start;padding:16px 0}
+.snum{width:50px;height:50px;border-radius:50%;background:#fff;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:var(--muted);flex-shrink:0;transition:all .25s;z-index:1}
+.step:hover .snum{background:var(--accent);border-color:var(--accent);color:#fff;transform:scale(1.1)}
+.step h3{font-size:1rem;font-weight:900;margin-bottom:4px}
+.step p{font-size:14px;color:var(--muted);font-weight:600}
+.scode{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;background:#1e1810;color:var(--orange);padding:5px 14px;border-radius:7px;margin-top:8px}
+
+/* faq */
+.faq-item{border-bottom:1.5px solid var(--border)}
+.faq-q{width:100%;background:transparent;border:none;text-align:left;padding:18px 0;font-family:'Nunito',sans-serif;font-weight:800;font-size:16px;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;gap:10px;transition:color .2s}
+.faq-q:hover{color:var(--accent)}
+.faq-icon{font-size:20px;color:var(--accent);transition:transform .3s;flex-shrink:0}
+.faq-item.open .faq-icon{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s;font-size:15px;color:var(--muted);font-weight:600}
+.faq-item.open .faq-a{max-height:300px;padding-bottom:18px}
+
+/* footer cta */
+.footer-cta{background:linear-gradient(135deg,var(--accent),var(--orange));padding:80px 20px;text-align:center;color:#fff}
+.footer-cta h2{font-size:clamp(2rem,5vw,3rem);font-weight:900;margin-bottom:14px}
+.footer-cta p{font-size:1.05rem;opacity:.85;max-width:460px;margin:0 auto 32px;font-weight:700}
+.btn-white{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--accent);font-family:'Nunito',sans-serif;font-weight:900;font-size:18px;padding:18px 40px;border-radius:100px;text-decoration:none;box-shadow:0 8px 32px rgba(0,0,0,.18);transition:all .2s}
+.btn-white:hover{transform:translateY(-3px) scale(1.02)}
+footer{background:#1e1810;color:rgba(255,255,255,.4);padding:36px 20px;text-align:center;font-size:13px;font-weight:700}
+footer a{color:var(--orange);text-decoration:none}
+.divider{height:2px;background:linear-gradient(90deg,transparent,var(--border),transparent);max-width:500px;margin:0 auto}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:480px){.ov-name{display:none}.slots{gap:3px}.slot-val{font-size:18px}}
+</style>
+</head>
+<body>
+
+<!-- ════ HERO ════ -->
+<div class="hero">
+  <p class="eyebrow">⚡ No installation needed · Just a USB cable</p>
+
+  <h1 class="hero-h1">A microcontroller?<br>It's just a <em>wardrobe</em><br>with switches.</h1>
+  <p class="hero-sub">Every drawer does one thing. Put <strong>1</strong> in the right compartment — something happens in the real world.</p>
+
+  <!-- ① THE FULL WARDROBE — many vague drawers, overview feeling -->
+  <div class="wardrobe-wrap">
+    <div class="wardrobe">
+      <div class="wardrobe-top">
+        <span>🗄️ ATmega328P — I/O REGISTERS</span>
+        <code>Arduino Nano · UNO</code>
+      </div>
+      <div class="ov-rows" id="ovRows"></div>
+    </div>
+  </div>
+
+  <!-- zoom arrow -->
+  <div class="zoom-hint">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <path d="M9 3v12M9 15l-4-4M9 15l4-4" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Zoom into drawer 5 — the one that lights up the LED
+  </div>
+
+  <!-- ② DRAWER 5 zoomed in -->
+  <div class="zoom-block">
+    <div class="zoom-tag">Register 5 <span>0x05 · PORTB</span></div>
+    <p class="zoom-sub">8 compartments. Each one is a physical pin on the chip.<br>Put <strong>1</strong> in compartment 5 → voltage on pin 13 → LED on.</p>
+
+    <div class="big-drawer">
+      <div class="drawer-lbl">
+        Drawer 5 — 8 compartments (bit 7 → 0)
+        <code>Click!</code>
+      </div>
+      <div class="slots" id="heroSlots"></div>
+    </div>
+
+    <div class="led-row">
+      <div class="led-bulb" id="heroLed"></div>
+      <div class="led-text">
+        <strong id="ledLabel">Click compartment 5 ☝️</strong>
+        <span>Onboard LED · Pin 13 · Arduino Nano/UNO</span>
+        <div class="led-status" id="ledStatus">// compartment 5 = 0 → PIN low → LED off</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-cue">
+    <span>See how to use it for real</span>
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path d="M10 4v12M10 16l-4-4M10 16l4-4" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ════ THE CODE ════ -->
+<div class="divider"></div>
+<section class="reveal">
+  <span class="label">The code</span>
+  <h2>Two lines.<br>LED on.</h2>
+  <p class="lead">No libraries. No magic. You speak directly to the chip.</p>
+  <div class="code-block">
+    <div class="code-top">
+      <div class="dot" style="background:#ff5f57"></div>
+      <div class="dot" style="background:#ffbd2e"></div>
+      <div class="dot" style="background:#28c840"></div>
+      <span class="code-file">ledon.asm</span>
+    </div>
+    <div class="code-body">
+      <div class="cl"><span class="ln">1</span><span><span class="kw">sbi</span> <span class="nh">4</span>,<span class="nh">5</span></span><span class="cm">&nbsp;&nbsp;← compartment 5 of drawer 4 = OUTPUT direction</span></div>
+      <div class="cl"><span class="ln">2</span><span><span class="kw">sbi</span> <span class="nh">5</span>,<span class="nh">5</span></span><span class="cm">&nbsp;&nbsp;← compartment 5 of drawer 5 = 1 → LED 🔴</span></div>
+    </div>
+  </div>
+  <div class="compare">
+    <div class="ccard good">
+      <span class="ctag">✓ costycnc.it/avr1</span>
+      <h3>Your path today</h3>
+      <ul class="clist">
+        <li>Open the browser</li>
+        <li>Plug in the USB cable</li>
+        <li>Type <code style="font-family:'JetBrains Mono',monospace;font-size:12px">sbi 5,5</code></li>
+        <li>Click Assemble → Connect</li>
+        <li>LED on. You know why.</li>
+      </ul>
+    </div>
+    <div class="ccard bad">
+      <span class="ctag">✗ Classic method</span>
+      <h3>The traditional path</h3>
+      <ul class="clist">
+        <li>Install Arduino IDE (500 MB)</li>
+        <li>Configure drivers, board, port</li>
+        <li>Learn setup(), loop(), pinMode()</li>
+        <li>LED on… but you don't know why</li>
+        <li>Only online simulator available</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+<section class="reveal">
+  <span class="label">Tutorial</span>
+  <h2>Three steps and you're in</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="snum">1</div>
+      <div><h3>Plug Arduino into your PC</h3><p>A USB cable. Any computer. Chrome or Edge. Nothing else.</p></div>
+    </div>
+    <div class="step">
+      <div class="snum">2</div>
+      <div>
+        <h3>Open the site and type the code</h3>
+        <p>Go to costycnc.it/avr1 — the editor is already there, ready.</p>
+        <span class="scode">sbi 4,5 &nbsp;&nbsp; sbi 5,5</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">3</div>
+      <div><h3>Assemble → Connect → watch the LED</h3><p>The site converts your instructions and uploads them via USB in seconds. The LED lights up. You just programmed a microcontroller.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+<section class="reveal">
+  <span class="label">Why ATmega328?</span>
+  <h2>Not just a chip.<br>The best one to truly understand.</h2>
+  <p class="lead">There are thousands of microcontrollers. This is the right one to start with — really.</p>
+  <div class="why-grid">
+    <div class="wcard"><div class="icon">📖</div><h3>Best documented chip in the world</h3><p>Millions of examples, huge community. You'll never be stuck alone.</p></div>
+    <div class="wcard"><div class="icon">🏛️</div><h3>DNA of every modern chip</h3><p>UART, I2C, SPI, ADC, Timers — the exact same modules found in every MCU made today.</p></div>
+    <div class="wcard"><div class="icon">🔍</div><h3>Transparent like no other</h3><p>Every drawer is visible and editable. Modern chips hide everything behind layers.</p></div>
+    <div class="wcard"><div class="icon">💰</div><h3>Costs 2–3 euros</h3><p>Arduino Nano clone under €3. Break it — buy another without crying.</p></div>
+    <div class="wcard"><div class="icon">🏠</div><h3>Real home automation from day one</h3><p>LEDs, relays, motors, sensors. On day one. No theory required first.</p></div>
+    <div class="wcard"><div class="icon">⚡</div><h3>Zero installation</h3><p>Browser + USB = ready. Mechanics, carpenters, kids — everyone.</p></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+<section class="reveal">
+  <span class="label">FAQ</span>
+  <h2>Quick answers</h2>
+  <div style="max-width:680px">
+    <div class="faq-item">
+      <button class="faq-q" onclick="faq(this)">I know nothing about programming. Can I still do this? <span class="faq-icon">+</span></button>
+      <div class="faq-a">Yes. You don't need to know what variables or functions are. You need to know that <code style="font-family:'JetBrains Mono',monospace">sbi 5,5</code> puts 1 in the right compartment and the LED turns on. Everything else comes naturally.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="faq(this)">Do I need to memorize DDRB, PORTB, PB5? <span class="faq-icon">+</span></button>
+      <div class="faq-a">No. They're just the names of the drawers. Drawer 4 = direction. Drawer 5 = value. You'll learn the names naturally as you use the system — not before.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="faq(this)">Do I need to install anything? <span class="faq-icon">+</span></button>
+      <div class="faq-a">Absolutely not. Chrome or Edge, a USB cable, and you're ready. Zero drivers, zero IDE, zero configuration.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="faq(this)">After this, can I use Arduino IDE? <span class="faq-icon">+</span></button>
+      <div class="faq-a">Yes — and you'll understand it much better. When IDE calls <code style="font-family:'JetBrains Mono',monospace">digitalWrite(13, HIGH)</code>, you already know what it's doing: putting 1 in compartment 5 of drawer 5.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="faq(this)">Does it work with Arduino UNO too? <span class="faq-icon">+</span></button>
+      <div class="faq-a">Yes. UNO, Nano, Pro Mini, LGT8F328P — all based on the same ATmega328. Just choose the right board in the site when you upload.</div>
+    </div>
+  </div>
+</section>
+
+<div class="footer-cta">
+  <h2>Your first LED<br>is waiting.</h2>
+  <p>No installations. No theory. One USB cable and you're in.</p>
+  <a href="https://costycnc.it/avr1" class="btn-white">⚡ Start at costycnc.it/avr1</a>
+</div>
+
+<footer>
+  <p>Made with ❤️ by <a href="https://costycnc.it">costycnc.it</a> · AVR Assembly learning platform for everyone</p>
+  <p style="margin-top:6px;font-size:11px">ATmega328P · Arduino Nano · Arduino UNO · AVR ASM · Web Serial API</p>
+</footer>
+
+<script>
+// ══ WARDROBE OVERVIEW — 20 drawers, vague, give the "big wardrobe" feeling ══
+const OV_REGS = [
+  {a:'0x00',n:'RESERVED'},{a:'0x01',n:'RESERVED'},{a:'0x02',n:'RESERVED'},
+  {a:'0x03',n:'PINB'},{a:'0x04',n:'DDRB'},
+  {a:'0x05',n:'PORTB',star:true},
+  {a:'0x06',n:'PINC'},{a:'0x07',n:'DDRC'},{a:'0x08',n:'PORTC'},
+  {a:'0x09',n:'PIND'},{a:'0x0A',n:'DDRD'},{a:'0x0B',n:'PORTD'},
+  {a:'0x0C',n:'RESERVED'},{a:'0x0D',n:'RESERVED'},
+  {a:'0x0E',n:'RESERVED'},{a:'0x0F',n:'RESERVED'},{a:'0x10',n:'RESERVED'},
+  {a:'0x15',n:'TIFR0'},{a:'0x24',n:'TIFR1'},{a:'0x44',n:'TIFR2'},
+];
+
+function buildOverview() {
+  const cont = document.getElementById('ovRows');
+  OV_REGS.forEach(reg => {
+    const row = document.createElement('div');
+    row.className = 'ov-row' + (reg.star ? ' star' : '');
+
+    const addr = document.createElement('div');
+    addr.className = 'ov-addr';
+    addr.textContent = reg.a;
+
+    const name = document.createElement('div');
+    name.className = 'ov-name';
+    name.textContent = reg.n;
+
+    const bits = document.createElement('div');
+    bits.className = 'ov-bits';
+    for (let i = 7; i >= 0; i--) {
+      const b = document.createElement('div');
+      b.className = 'ov-bit' + (reg.star && i === 5 ? ' blink' : '');
+      b.id = reg.star && i === 5 ? 'ov-led-bit' : '';
+      b.textContent = '0';
+      bits.appendChild(b);
+    }
+
+    const handle = document.createElement('div');
+    handle.className = 'ov-handle';
+
+    row.appendChild(addr);
+    row.appendChild(name);
+    row.appendChild(bits);
+    row.appendChild(handle);
+    cont.appendChild(row);
+  });
+}
+
+// ══ HERO SLOTS — drawer 5 zoomed in ══
+const heroState = new Array(8).fill(0);
+
+function buildSlots() {
+  const cont = document.getElementById('heroSlots');
+  for (let i = 7; i >= 0; i--) {
+    const s = document.createElement('div');
+    s.className = 'slot' + (i === 5 ? ' star-slot' : '');
+    s.id = 'hs' + i;
+    s.innerHTML = `
+      <div class="slot-num">${i}</div>
+      <div class="slot-val">0</div>
+      <div class="slot-name">${i === 5 ? '★ LED\npin 13' : 'PB' + i}</div>
+    `;
+    s.addEventListener('click', () => toggleSlot(i));
+    cont.appendChild(s);
+  }
+}
+
+function toggleSlot(i) {
+  heroState[i] ^= 1;
+  const v = heroState[i];
+  const el = document.getElementById('hs' + i);
+  el.querySelector('.slot-val').textContent = v;
+  el.classList.toggle('on', v === 1);
+  if (i === 5) {
+    el.classList.toggle('star-slot', v === 0);
+    const ob = document.getElementById('ov-led-bit');
+    if (ob) ob.textContent = v;
+  }
+  updateLed();
+}
+
+function updateLed() {
+  const on = heroState[5] === 1;
+  document.getElementById('heroLed').className = 'led-bulb' + (on ? ' on' : '');
+  document.getElementById('ledLabel').textContent = on ? '💡 LED ON!' : 'Click compartment 5 ☝️';
+  const st = document.getElementById('ledStatus');
+  st.textContent = on
+    ? '// compartment 5 = 1 → PIN high → LED on ✓'
+    : '// compartment 5 = 0 → PIN low → LED off';
+  st.className = 'led-status' + (on ? ' ok' : '');
+}
+
+// ══ FAQ ══
+function faq(btn) {
+  const item = btn.closest('.faq-item');
+  const open = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!open) item.classList.add('open');
+}
+
+// ══ SCROLL REVEAL ══
+document.querySelectorAll('.reveal').forEach(el => {
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting) el.classList.add('visible');
+  }, {threshold: .08}).observe(el);
+});
+
+buildOverview();
+buildSlots();
+</script>
+</body>
+</html>
