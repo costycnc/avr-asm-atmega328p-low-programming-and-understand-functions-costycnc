@@ -9,7 +9,6 @@
 
 👉 **[Try it live: costycnc.it/avr1](https://costycnc.github.io/avr-compiler-js/)** 👈
 
-![Hero Screenshot](https://raw.githubusercontent.com/costycnc/avr1/main/screenshot.png) <!-- You'll need to add a real screenshot -->
 
 ## 🗄️ The Core Idea
 
