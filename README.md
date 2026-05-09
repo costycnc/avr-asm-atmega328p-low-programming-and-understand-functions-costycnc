@@ -284,7 +284,7 @@ Quick steps:
 
 ## 🔗 Related
 
-- **[AVR online compiler](https://github.com/costycnc/avr-compiler-js)** – write and upload AVR code from your browser
+- **[AVR online compiler](https://costycnc.github.io/avr-compiler-js/)** – write and upload AVR code from your browser
 - **[GRBL 1.1 for unipolar motors](https://github.com/costycnc/grbl-1.1-unipolar)** – custom firmware for unipolar stepper motors
 - **[Inkscape Hello World](https://github.com/costycnc/inkscape-1.0-python-hello-world-extension-costycnc)** – minimal Inkscape extension tutorial
 
