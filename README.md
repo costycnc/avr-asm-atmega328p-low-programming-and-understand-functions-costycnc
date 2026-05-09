@@ -1,69 +1,157 @@
 
-# RC Car Pulse Control in Assembly (ASM) – No IDE, No Libraries
+# ✨ AVR1: A Microcontroller is Just a Wardrobe with Switches
 
-[![AVR](https://img.shields.io/badge/AVR-ASM-blue.svg)](https://costycnc.github.io/avr-compiler-js/)
-[![Arduino](https://img.shields.io/badge/Arduino-Uno%2FNano-green.svg)](https://costycnc.github.io/avr-compiler-js/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Web Serial API](https://img.shields.io/badge/Web%20Serial-API-blue)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API)
+[![AVR Assembly](https://img.shields.io/badge/AVR-Assembly-orange)](https://avr-libc.nongnu.org/)
 
-## 📖 What does this code do?
+**Program an Arduino (ATmega328P) directly from your browser. No IDE, no drivers, no installation. Just a USB cable and two lines of code.**
 
-**Controls an RC car** using pulse sequences (W1 and W2). The code is written in **pure Assembly (ASM)** for AVR microcontrollers (Arduino Uno/Nano).
+👉 **[Try it live: costycnc.it/avr1](https://costycnc.github.io/avr-compiler-js/)** 👈
 
-This specific code sends:
-- **4 x W2 pulses** → synchronization / start sequence
-- **10 x W1 pulses** → **FORWARD** command
+![Hero Screenshot](https://raw.githubusercontent.com/costycnc/avr1/main/screenshot.png) <!-- You'll need to add a real screenshot -->
+
+## 🗄️ The Core Idea
+
+> A microcontroller is a wardrobe. Each drawer (register) controls something. Put a `1` in the right compartment (bit) — and a real LED lights up.
+
+This project strips away all complexity. You don't learn abstract functions or libraries first. You directly manipulate the memory of an **ATmega328P** (Arduino Uno/Nano) using AVR assembly.
+
+- **Drawer 4 (DDRB)** = Direction (Input or Output)
+- **Drawer 5 (PORTB)** = Value (0V or 5V)
+
+## 🚀 How It Works
+
+1.  **Plug in** your Arduino (Uno or Nano) via USB.
+2.  **Open** the web app (Chrome or Edge only).
+3.  **Write** two instructions:
+    ```asm
+    sbi 4,5   ; Set bit 5 of drawer 4 -> PB5 as OUTPUT
+    sbi 5,5   ; Set bit 5 of drawer 5 -> Set PB5 HIGH -> LED ON!
+    ```
+4.  **Click "Assemble & Upload"**.
+5.  **Watch the LED** on pin 13 turn on. That's it.
+
+## ✨ Features
+
+- **⚡ Zero Installation:** Works entirely in the browser using the Web Serial API.
+- **🧠 Visual Metaphor:** The "wardrobe with drawers" makes registers and bits intuitive, even for non-programmers.
+- **📝 Real AVR Assembly:** Write actual `sbi`, `cbi`, `out`, `in` instructions. No pseudo-code.
+- **🎮 Interactive Simulator:** Click the bits in the "Drawer 5" compartment to see the LED respond instantly.
+- **📱 Responsive Design:** Works on desktop and tablets (requires Chrome/Edge for USB).
+
+## 🛠️ What You Need
+
+| Hardware | Software |
+| :--- | :--- |
+| Arduino Uno, Nano, or any ATmega328P board | Google Chrome or Microsoft Edge |
+| USB Cable (Data, not charge-only) | An internet connection |
+| Built-in LED (pin 13) or external + resistor | That's it! |
+
+## 🧑‍🏫 For Absolute Beginners
+
+If you've never programmed in your life, this is for you.
+
+1.  **You don't need to know** what a variable, function, or loop is.
+2.  **You just need to know** that `sbi 5,5` puts a `1` in the 5th compartment of the 5th drawer.
+3.  **Result:** The LED turns on. You understand *why*.
+
+The rest (timers, interrupts, PWM) will come naturally once you see the machine as a set of drawers.
+
+## 🤔 Why ATmega328P?
+
+- 📖 **Best documented chip in the world** – millions of examples and a huge community.
+- 🏛️ **The DNA of all modern chips** – Once you learn UART, I2C, SPI, and Timers here, you know them everywhere.
+- 🔍 **Transparent** – Every "drawer" is visible and editable. Modern MCUs hide everything.
+- 💰 **Costs €2-3** – Buy an Arduino Nano clone; break it, buy another.
+- 🏠 **Real hardware from day one** – LEDs, relays, motors, sensors. No theory-first.
+
+## 📂 Project Structure
+
+```
+avr1/
+├── index.html          # The complete web app (single file)
+├── style.css           # (embedded) Wardrobe design & animations
+├── script.js           # (embedded) Interactive slots & UI logic
+└── README.md           # This file
+```
+
+## 🔧 Local Development
+
+Since the app uses the Web Serial API, it must be served over HTTPS or `localhost`.
+
+1.  Clone the repo:
+    ```bash
+    git clone https://github.com/costycnc/avr1.git
+    cd avr1
+    ```
+2.  Serve locally (e.g., with Python):
+    ```bash
+    python3 -m http.server 8000
+    ```
+3.  Open `http://localhost:8000` in Chrome/Edge.
+
+## 🧪 Testing
+
+You can test the interactive drawer without an Arduino:
+- Just click any compartment in the "Drawer 5 (PORTB)" view. The simulated LED will respond immediately.
+
+## 🤝 Contributing
+
+Contributions are welcome! Areas to explore:
+- Support for more AVR instructions (`out`, `in`, `rjmp`).
+- Add a visual "oscilloscope" for PWM pins.
+- Translate the tutorial into other languages.
+
+1.  Fork the project.
+2.  Create your branch (`git checkout -b feature/amazing`).
+3.  Commit your changes (`git commit -m 'Add something amazing'`).
+4.  Push (`git push origin feature/amazing`).
+5.  Open a Pull Request.
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## 🌟 Acknowledgements
+
+- The amazing [AVR-LibC](https://avr-libc.nongnu.org/) team.
+- Web Serial API W3C specification.
+- Arduino community for making hardware accessible.
 
 ---
 
-## 📝 The Assembly Code
+## 💬 FAQ
 
-```asm
-.org 0
-    rjmp init
-.org 0x60
-init:
-    ; --- Initialize stack (MANDATORY!) ---
-    ldi r16, 0xFF
-    out 0x3D, r16    ; SPL
-    ldi r16, 0x08
-    out 0x3E, r16    ; SPH
+**Q: I know nothing about programming. Can I do this?**
+**A:** Yes. This tutorial was designed for carpenters, mechanics, artists, and kids. No prior knowledge required.
 
-loop:
-    rcall forward    ; Send FORWARD command
-    rjmp loop        ; Repeat forever
+**Q: Do I need to memorize `DDRB`, `PORTB`, `PB5`?**
+**A:** No. They're just the names of the drawers. You'll learn them naturally by using the system, not by studying a datasheet.
 
-forward:
-    ; Start sequence: 4 x W2 pulses
-    rcall w2
-    rcall w2
-    rcall w2
-    rcall w2
-    
-    ; Command: 10 x W1 pulses = FORWARD
-    rcall w1
-    rcall w1
-    rcall w1
-    rcall w1
-    rcall w1
-    rcall w1
-    rcall w1
-    rcall w1
-    rcall w1
-    rcall w1
-    ret
+**Q: Does it work with Arduino UNO?**
+**A:** Yes. Also Nano, Pro Mini, and any clone with the ATmega328P.
 
-w2:
-    sbi 5,0          ; Set PB0 HIGH (Arduino Pin 8)
-    ldi r17,31       ; Delay for 1.5ms
-    rcall pause
-    cbi 5,0          ; Set PB0 LOW
-    ldi r17,11       ; Delay for 0.5ms
-    rcall pause
-    ret
+**Q: After this, can I still use the Arduino IDE?**
+**A:** Absolutely. And you'll understand it much better. When you write `digitalWrite(13, HIGH)`, you'll know it's just putting a `1` in compartment 5 of drawer 5.
 
-w1:
-    sbi 5,0          ; Set PB0 HIGH
-    ldi r17,11       ; Delay for 0.5ms
-    rcall pause
+---
+
+**Made with ❤️ by [costycnc.it](https://costycnc.it)** – *Unlocking the magic of microcontrollers, one drawer at a time.*
+```
+
+---
+
+### 📸 Consiglio per l'immagine (screenshot)
+
+Sostituisci il link `https://raw.githubusercontent.com/.../screenshot.png` con un'immagine reale. Ti consiglio di fare uno screenshot che mostri:
+
+1.  Il "guardaroba" (wardrobe) con i cassetti.
+2.  Il cassetto 5 ingrandito.
+3.  Il LED che si illumina.
+4.  Le due linee di codice.
+
+Puoi caricare l'immagine nella root del repository e chiamarla `screenshot.png`.    rcall pause
     cbi 5,0          ; Set PB0 LOW
     ldi r17,11       ; Delay for 0.5ms
     rcall pause
@@ -209,4 +297,3 @@ Quick steps:
 **Pure Assembly. No magic. Your RC car obeys your code.** 🎯🔥
 ```
 
-Questo è Markdown puro. Copialo e incollalo nel tuo file `README.md` su GitHub.
